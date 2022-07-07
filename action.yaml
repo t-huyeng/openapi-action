@@ -1,0 +1,86 @@
+name: "OpenAPI Clientcode Action"
+description: "Generates a JavaScript and Python library and docs from an OpenAPI description"
+branding:
+  icon: target
+  color: green
+
+inputs:
+  openapi-file:
+    description: "The path to the OpenAPI document to generate a client library for"
+    required: true
+    default: "openapi.yaml"
+
+runs:
+  using: composite
+  steps:
+    # Print params of invocation
+    - name: "Print params of invocation for book keeping"
+      run: |
+        echo "========================OpenAPI Action===================================="
+        echo "Open Api File:" ${{ inputs.openapi-file }}
+        echo -e "\nPython Version:" ${{ inputs.python-version }}
+      shell: bash
+
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - name: "Checkout"
+      uses: actions/checkout@v3
+
+    - name: "setup python"
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: "Clean up existing generated code"
+      run: |
+        sudo rm -rf ${{ github.workspace }}/python-client
+      shell: bash
+
+    - name: "Generate Python Client"
+      uses: openapi-generators/openapitools-generator-action@v1
+      with:
+        generator: python
+        openapi-file: openapi.yaml
+        config-file: config.yml
+
+    - name: "Print dir after generation"
+      run: |
+        echo "======================== Github Workspace ===================================="
+        ls ${{ github.workspace }}
+        echo "======================== Python Client ===================================="
+        ls ${{ github.workspace }}/python-client
+      shell: bash
+
+    - name: "move file to client-folder"
+      run: |
+        mkdir -p clients
+        mv ${{ github.workspace }}/python-client ${{ github.workspace }}/clients/
+      shell: bash
+
+    - name: "Generate JavaScript Client"
+      uses: openapi-generators/openapitools-generator-action@v1
+      with:
+        generator: javascript
+        openapi-file: openapi.yaml
+        config-file: config.yml
+
+    - name: "move file to client-folder"
+      run: |
+        mkdir -p clients
+        mv ${{ github.workspace }}/javascript-client ${{ github.workspace }}/clients/
+      shell: bash
+
+    - name: "Print dir after move"
+      run: |
+        echo "======================== Client ===================================="
+        ls ${{ github.workspace }}/clients
+      shell: bash
+
+    - uses: casperdcl/push-dir@v1
+      with:
+        message: update generated code
+        branch: client-code
+        dir: clients
+        history: true
+        name: github-action-bot
+        email: github-action-bot@users.noreply.github.com
+        force: true
