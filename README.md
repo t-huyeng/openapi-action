@@ -24,7 +24,7 @@ jobs:
       matrix:
         python-version: ['3.7.8' ]
     steps:
-      - name: "Generate deutschland code"
+      - name: "Generate Client-Code"
         uses: t-huyeng/openapi-action@latest
         with:
           openapi-file: ${{ github.workspace }}/openapi.yaml
